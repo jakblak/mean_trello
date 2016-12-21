@@ -4,6 +4,7 @@
 - Refactoring into my personal MEAN Setup
 
 // **** //
+
 This project provides a look at getting started using Angular 2 Http functionality and how it can be used
 to call a Node.js RESTful service.  
 

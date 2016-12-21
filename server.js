@@ -1,106 +1,29 @@
-const express       = require('express'),
-    exphbs          = require('express-handlebars'),
-    hbsHelpers      = require('handlebars-helpers'),
-    hbsLayouts      = require('handlebars-layouts'),
-    bodyParser      = require('body-parser'),
-    cookieParser    = require('cookie-parser'),
-    errorhandler    = require('errorhandler'),
-    csrf            = require('csurf'),
-    morgan          = require('morgan'),
-    favicon         = require('serve-favicon'),
-    
-    router          = require('./routes/router'),
-    database        = require('./lib/database'),
-    seeder          = require('./lib/dbSeeder'),
-    app             = express(),
-    port            = 3000;
+/**
+ * Entry point to Node server
+ */
 
-class Server {
+// Set default node environment to development
+process.env.NODE_ENV = process.env.NODE_ENV || 'development';
 
-    constructor() {
-        this.initViewEngine();
-        this.initExpressMiddleWare();
-        this.initCustomMiddleware();
-        this.initDbSeeder();
-        this.initRoutes();
-        this.start();
-    }
+// Load the module dependencies
+const initDatabase = require('./server/config/database');
+const configureExpress = require('./server/config/express');
+// const configurePassport = require('.server/config/passport');
+const port = 3000;
 
-    start() {
-        app.listen(port, (err) => {
-            console.log('[%s] Listening on http://localhost:%d', process.env.NODE_ENV, port);
-        });
-    }
+// Open DB and create a new Mongoose connection instance
+const db = initDatabase();
 
-    initViewEngine() {
-        const hbs = exphbs.create({
-            extname: '.hbs',
-            defaultLayout: 'master'
-        });
-        app.engine('hbs', hbs.engine);
-        app.set('view engine', 'hbs');
-        hbsLayouts.register(hbs.handlebars, {});
-    }
+// Create a new Express application instance
+const app = configureExpress(db);
 
-    initExpressMiddleWare() {
-        app.use(favicon(__dirname + '/public/images/favicon.ico'));
-        app.use(express.static(__dirname + '/public'));
-        app.use(morgan('dev'));
-        app.use(bodyParser.urlencoded({ extended: true }));
-        app.use(bodyParser.json());
-        app.use(errorhandler());
-        app.use(cookieParser());
-        app.use(csrf({ cookie: true }));
+// Configure the Passport middleware
+// const passport = configurePassport();
 
-        app.use(function (req, res, next) {
-            var csrfToken = req.csrfToken();
-            res.locals._csrf = csrfToken;
-            res.cookie('XSRF-TOKEN', csrfToken);
-            next();
-        });
+// Use the Express application instance to listen to the '3000' port
+app.listen(port, (err) => {
+    console.log('[%s] Listening on http://localhost:%d', process.env.NODE_ENV, port);
+});
 
-        process.on('uncaughtException', function (err) {
-            if (err) console.log(err, err.stack);
-        });
-    }
-
-    initCustomMiddleware() {
-        if (process.platform === "win32") {
-            require("readline").createInterface({
-                input: process.stdin,
-                output: process.stdout
-            }).on("SIGINT", function () {
-                console.log('SIGINT: Closing MongoDB connection');
-                database.close();
-            });
-        }
-
-        process.on('SIGINT', function() {
-            console.log('SIGINT: Closing MongoDB connection');
-            database.close();
-        });
-    }
-
-    initDbSeeder() {
-        database.open(function() {
-            //Set NODE_ENV to 'development' and uncomment the following if to only run
-            //the seeder when in dev mode
-            //if (process.env.NODE_ENV === 'development') {
-            //  seeder.init();
-            //} 
-            seeder.init();
-        });
-    }
-
-    initRoutes() {
-        router.load(app, './controllers');
-
-        // redirect all others to the index (HTML5 history)
-        app.all('/*', function(req, res) {
-            res.sendFile(__dirname + '/public/index.html');
-        });
-    }
-
-}
-
-var server = new Server();
+// Use the module.exports property to expose our Express application instance for external usage
+module.exports = app;
