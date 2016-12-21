@@ -26,7 +26,7 @@ gulp.task('clean', function () {
 });
 
 gulp.task('copy:libs', function (done) {
-    sequence('clean', 'copy:vendor', 'copy:rxjs', 'copy:angular', done);
+    sequence('clean', 'copy:vendor', 'copy:rxjs', 'copy:angular', 'copy:bootstrap', done);
 });
 
 gulp.task('copy:vendor', function() {
@@ -51,6 +51,12 @@ gulp.task('copy:angular', function() {
     return gulp
                    .src([nodeModulesPath + '/@angular/**/*'])
                    .pipe(gulp.dest(libPath + '/@angular'));
+});
+
+gulp.task('copy:bootstrap', function() {
+    return gulp
+                   .src([nodeModulesPath + '/bootstrap/**/*'])
+                   .pipe(gulp.dest(libPath + '/bootstrap'));
 });
 
 gulp.task('compressScripts', function() {
